@@ -483,7 +483,7 @@
     document.querySelectorAll(`.segment[data-field="${field}"] button`).forEach((button) => {
       button.classList.toggle("active", button.dataset.value === value);
     });
-    render();
+    // Do NOT auto-render — wait for Run Duel click
   }
 
   document.querySelectorAll(".segment button").forEach((button) => {
@@ -494,14 +494,14 @@
 
   dom.pair.addEventListener("change", () => {
     state.pair = dom.pair.value;
-    render();
+    // Do NOT auto-render — wait for Run Duel click
   });
 
   function bindRange(range, number, stateKey) {
     const sync = (source, target) => {
       state[stateKey] = Number(source.value);
       target.value = source.value;
-      render();
+      // Do NOT auto-render — wait for Run Duel click
     };
     range.addEventListener("input", () => sync(range, number));
     number.addEventListener("input", () => sync(number, range));

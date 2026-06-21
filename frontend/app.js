@@ -1,4 +1,5 @@
 (function () {
+  const API_BASE = "https://aegis-self-defending-deepbook-execution-production.up.railway.app";
   const sampleBooks = {
     calm: {
       name: "Calm",
@@ -431,14 +432,13 @@
     ctx.fillText("Asks", width - 26, height - 22);
   }
 
-  function render() {
+  function applyResult(result) {
     const book = sampleBooks[state.scenario];
     const intent = currentIntent();
-    const result = simulateDuel(intent, book);
     const maxSlip = Math.max(result.naive.slippageBps, result.aegis.slippageBps, 1);
 
     dom.intentSummary.textContent = `${intent.side.toUpperCase()} ${format(intent.quantity, 0)} ${intent.pair.split("_")[0]}`;
-    dom.scenarioLabel.textContent = book.name;
+    dom.scenarioLabel.textContent = result.bookName ?? book.name;
     dom.riskScore.textContent = `${Math.round(result.risk.score * 100)}%`;
     dom.riskLabel.textContent = result.risk.label;
     dom.sliceCount.textContent = result.plan.sliceCount;
@@ -458,6 +458,24 @@
     renderSignals(result.risk.signals);
     renderOrders(result.plan.children);
     drawBook(book, result.plan);
+  }
+
+  function render() {
+    const intent = currentIntent();
+    // Try the live API first; fall back to local simulation if unreachable.
+    fetch(`${API_BASE}/api/duel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...intent, scenario: state.scenario }),
+    })
+      .then((r) => r.json())
+      .then((result) => applyResult(result))
+      .catch(() => {
+        // API unreachable — run locally
+        const book = sampleBooks[state.scenario];
+        const result = simulateDuel(intent, book);
+        applyResult(result);
+      });
   }
 
   function setSegment(field, value) {
